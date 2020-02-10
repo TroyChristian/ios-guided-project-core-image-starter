@@ -6,10 +6,14 @@ import Photos
 class PhotoFilterViewController: UIViewController {
     
     private var context = CIContext(options: nil)
-    private var originalImage: UIImage? {
+
+      
+        
+    
+    
+    private var scaledImage: UIImage? {
         didSet {
-            // filter and update the UI
-           // updateImage()
+            updateImage()
         }
     }
 
@@ -17,19 +21,38 @@ class PhotoFilterViewController: UIViewController {
 	@IBOutlet weak var contrastSlider: UISlider!
 	@IBOutlet weak var saturationSlider: UISlider!
 	@IBOutlet weak var imageView: UIImageView!
+    
+    private var originalImage: UIImage? {
+        didSet {
+            // scale down the image
+            guard let originalImage = originalImage else { return }
+            // Height and width
+            var scaledSize = imageView.bounds.size
+            // 1x, 2x, or 3x
+            let scale = UIScreen.main.scale
+            scaledSize = CGSize(width: scaledSize.width * scale, height: scaledSize.height * scale)
+            print("size: \(scaledSize)")
+            // Update the display with the scaled image
+            scaledImage = originalImage.imageByScaling(toSize: scaledSize)
+        }
+    }
+ 
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
         
-        originalImage = imageView.image
+        print("Bounds: \(UIScreen.main.bounds)")
+        print("Scale: \(UIScreen.main.scale)")
+        
+       
         
 
 
 	}
     
     func updateImage() {
-        if let originalImage = originalImage {
-            imageView.image = filterImage(originalImage)
+        if let scaledImage = scaledImage {
+            imageView.image = filterImage(scaledImage)
         } else {
             imageView.image = nil // resetting image to nothing
         }
@@ -57,7 +80,14 @@ class PhotoFilterViewController: UIViewController {
         
         
         
-        
+   
+        }
+    
+    private func showImagePicker() {
+           let imagePicker = UIImagePickerController()
+           imagePicker.sourceType = .photoLibrary
+           imagePicker.delegate = self
+        present(imagePicker, animated:true)
         
         
    
@@ -68,6 +98,8 @@ class PhotoFilterViewController: UIViewController {
 	@IBAction func choosePhotoButtonPressed(_ sender: Any) {
 		// TODO: show the photo picker so we can choose on-device photos
 		// UIImagePickerController + Delegate
+        showImagePicker()
+      
 	}
 	
 	@IBAction func savePhotoButtonPressed(_ sender: UIButton) {
@@ -89,5 +121,21 @@ class PhotoFilterViewController: UIViewController {
         updateImage() 
 
 	}
+}
+
+
+extension PhotoFilterViewController: UIImagePickerControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        
+        if let image = info[.originalImage] as? UIImage {
+            originalImage = image
+        }
+        picker.dismiss(animated:true)
+    }
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated:true)
+    }
+}
+extension PhotoFilterViewController: UINavigationControllerDelegate {
 }
 
